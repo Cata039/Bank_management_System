@@ -271,6 +271,7 @@ int main() {
 
     printf("Welcome!\n");
 
+    while(1){
     while(!loggedIn){
         printf("Please press:\n");
         printf("1. LOGIN\n");
@@ -325,6 +326,7 @@ int main() {
                 printf("Invalid choice! Please enter again.\n");
                 break;
         }
+    }
     }
 
     printf("Exiting...\n");
