@@ -46,7 +46,7 @@ void readAccountData() {
 
 // Function to update CSV file with account data
 void updateCSVFile() {
-    FILE *file = fopen("persons.csv", "a"); // Open the file in append mode
+    FILE *file = fopen("C:/Users/jemna/OneDrive/Desktop/PP/C_Bank_Management_system/persons.csv", "a");
     if (file == NULL) {
         printf("Error opening file.\n");
         exit(1);
@@ -58,6 +58,7 @@ void updateCSVFile() {
 
     fclose(file);
 }
+
 
 // Function to find accounts owned by a person
 int findAccountsByOwner(const char *name, int indexes[]) {
@@ -75,21 +76,9 @@ int login(char *name) {
     printf("Enter your name and surname: ");
     scanf(" %[^\n]", name); // Read full name with spaces
 
-    // Convert the entered name to lowercase for case-insensitive comparison
-    char lowercaseName[MAX_NAME_LENGTH];
-    strcpy(lowercaseName, name);
-    for (int i = 0; lowercaseName[i]; i++) {
-        lowercaseName[i] = tolower(lowercaseName[i]);
-    }
-
-    // Check if the provided name matches any entry in the data.csv file
+    // Check if the provided name matches any entry in the persons.csv file
     for (int i = 0; i < numAccounts; i++) {
-        char lowercaseOwner[MAX_NAME_LENGTH];
-        strcpy(lowercaseOwner, accounts[i].owner);
-        for (int j = 0; lowercaseOwner[j]; j++) {
-            lowercaseOwner[j] = tolower(lowercaseOwner[j]);
-        }
-        if (strcmp(lowercaseOwner, lowercaseName) == 0) {
+        if (strcmp(accounts[i].owner, name) == 0) {
             printf("Login successful!\n");
             return 1; //successful login
         }
@@ -99,18 +88,20 @@ int login(char *name) {
     return 0;
 }
 
+
 // Function to create an account
 void createAccount() {
     printf("Enter the IBAN: ");
     scanf("%s", accounts[numAccounts].iban);
+    getchar(); // Consume newline character left in the buffer
 
     printf("Enter the owner's name: ");
-    getchar(); // Consume the newline character left in the buffer
     fgets(accounts[numAccounts].owner, sizeof(accounts[numAccounts].owner), stdin);
     accounts[numAccounts].owner[strcspn(accounts[numAccounts].owner, "\n")] = '\0'; // Remove trailing newline
 
     printf("Enter the coin type (e.g., EUR, USD, RON): ");
     scanf("%s", accounts[numAccounts].coin);
+    getchar(); // Consume newline character left in the buffer
 
     printf("Enter the amount: ");
     scanf("%lf", &accounts[numAccounts].amount);
@@ -118,9 +109,9 @@ void createAccount() {
     numAccounts++;
     printf("Account created successfully!\n");
 
-    // Update the CSV file with the new account data
     updateCSVFile();
 }
+
 
 // Function to edit account
 void editAccount(const char *name) {
@@ -148,16 +139,37 @@ void editAccount(const char *name) {
     }
 
     int selectedIndex = indexes[choice - 1];
-    printf("Enter new IBAN: ");
-    scanf("%s", accounts[selectedIndex].iban);
-    printf("Enter new amount: ");
-    scanf("%lf", &accounts[selectedIndex].amount);
-    printf("Enter new coin type (e.g., EUR, USD, RON): ");
-    scanf("%s", accounts[selectedIndex].coin);
+    int editChoice;
+
+    printf("Select what to edit:\n");
+    printf("1. IBAN\n");
+    printf("2. Amount\n");
+    printf("3. Coin\n");
+    printf("Enter your choice: ");
+    scanf("%d", &editChoice);
+
+    switch (editChoice) {
+        case 1:
+            printf("Enter new IBAN: ");
+            scanf("%s", accounts[selectedIndex].iban);
+            break;
+        case 2:
+            printf("Enter new amount: ");
+            scanf("%lf", &accounts[selectedIndex].amount);
+            break;
+        case 3:
+            printf("Enter new coin type (e.g., EUR, USD, RON): ");
+            scanf("%s", accounts[selectedIndex].coin);
+            break;
+        default:
+            printf("Invalid choice.\n");
+            return;
+    }
 
     printf("Account edited successfully!\n");
     updateCSVFile();
 }
+
 
 // Function to delete account
 void deleteAccount(const char *name) {
@@ -185,14 +197,30 @@ void deleteAccount(const char *name) {
     }
 
     int selectedIndex = indexes[choice - 1];
+
+    // Remove the account from the array
     for (int i = selectedIndex; i < numAccounts - 1; i++) {
         accounts[i] = accounts[i + 1];
     }
     numAccounts--;
 
+    // Rewrite the CSV file with updated account data
+    FILE *file = fopen("persons.csv", "w");
+    if (file == NULL) {
+        printf("Error opening file.\n");
+        exit(1);
+    }
+
+    for (int i = 0; i < numAccounts; i++) {
+        fprintf(file, "%s,%s,%s,%.2lf\n", accounts[i].iban, accounts[i].owner,
+                accounts[i].coin, accounts[i].amount);
+    }
+
+    fclose(file);
+
     printf("Account deleted successfully!\n");
-    updateCSVFile();
 }
+
 
 // Function to view account data
 void viewAccountData(const char *name) {
@@ -261,13 +289,13 @@ void performTransactions(const char *name) {
         printf("Insufficient funds in the source account.\n");
     }
 }
+
 int main() {
     int choice = -1;
     char name[100];
     int loggedIn = 0; // Flag to track if user is logged in
     int accountCreated = 0; // Flag to track if account has been created
 
-    // Read account data from CSV file
     readAccountData();
 
     printf("Welcome!\n");
