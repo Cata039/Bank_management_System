@@ -3,11 +3,11 @@
 #include <string.h>
 #include <ctype.h>
 
-
 #define MAX_ACCOUNTS 100
 #define MAX_NAME_LENGTH 100
 #define MAX_LINE_LENGTH 1000
 #define DELIMITER ","
+#define TEMP_FILE_NAME "temp.txt"
 
 struct Account {
     char iban[100];
@@ -16,12 +16,22 @@ struct Account {
     double amount;
 };
 
+struct CurrencyConversion {
+    char currency[4];
+    double rate;
+};
+
+struct CurrencyConversion conversionRates[] = {
+        {"USD", 1.18}, // 1 EUR = 1.18 USD
+        {"RON", 4.91}  // 1 EUR = 4.91 RON
+};
+
 struct Account accounts[MAX_ACCOUNTS];
 int numAccounts = 0;
 
-// Function to read account data from CSV file
+// Function to read account data from TXT file
 void readAccountData() {
-    FILE *file = fopen("C:/Users/jemna/OneDrive/Desktop/PP/C_Bank_Management_system/persons.csv", "r");
+    FILE *file = fopen("persons.txt", "r");
 
     if (file == NULL) {
         printf("Error opening file.\n");
@@ -44,9 +54,9 @@ void readAccountData() {
     fclose(file);
 }
 
-// Function to update CSV file with account data
-void updateCSVFile() {
-    FILE *file = fopen("C:/Users/jemna/OneDrive/Desktop/PP/C_Bank_Management_system/persons.csv", "a");
+// Function to update TXT file with account data
+void updateTXTFile() {
+    FILE *file = fopen("persons.txt", "a");
     if (file == NULL) {
         printf("Error opening file.\n");
         exit(1);
@@ -59,6 +69,52 @@ void updateCSVFile() {
     fclose(file);
 }
 
+// Function to create a temporary file with changing data
+void createTempFile() {
+    FILE *file = fopen(TEMP_FILE_NAME, "w");
+    if (file == NULL) {
+        printf("Error creating temporary file.\n");
+        exit(1);
+    }
+
+    // Write the changing account information to the temporary file
+    for (int i = 0; i < numAccounts; i++) {
+        fprintf(file, "%s,%s,%s,%.2lf\n", accounts[i].iban, accounts[i].owner,
+                accounts[i].coin, accounts[i].amount);
+    }
+
+    fclose(file);
+}
+
+// Function to merge temporary file with main CSV file
+void mergeTempFileWithCSV() {
+    FILE *mainFile = fopen("persons.txt", "w");
+    FILE *tempFile = fopen(TEMP_FILE_NAME, "r");
+
+    if (mainFile == NULL || tempFile == NULL) {
+        printf("Error opening files for merging.\n");
+        exit(1);
+    }
+
+    char line[MAX_LINE_LENGTH];
+    while (fgets(line, MAX_LINE_LENGTH, tempFile) != NULL) {
+        fputs(line, mainFile); // Append each line from the temp file to the main CSV file
+    }
+
+    fclose(mainFile);
+    fclose(tempFile);
+}
+
+
+// Function to clear temporary file
+void clearTempFile() {
+    FILE *file = fopen(TEMP_FILE_NAME, "w");
+    if (file == NULL) {
+        printf("Error clearing temporary file.\n");
+        exit(1);
+    }
+    fclose(file);
+}
 
 // Function to find accounts owned by a person
 int findAccountsByOwner(const char *name, int indexes[]) {
@@ -70,6 +126,7 @@ int findAccountsByOwner(const char *name, int indexes[]) {
     }
     return count;
 }
+
 
 // Function to login
 int login(char *name) {
@@ -88,28 +145,74 @@ int login(char *name) {
     return 0;
 }
 
+// Function to generate IBANs automatically
+void generateIBAN(char *iban) {
+    // You can implement your IBAN generation algorithm here
+    // For simplicity, let's generate a random 10-character IBAN
+    const char *validChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    int length = strlen(validChars);
+
+    for (int i = 0; i < 10; i++) {
+        iban[i] = validChars[rand() % length];
+    }
+    iban[10] = '\0'; // Null-terminate the string
+}
 
 // Function to create an account
 void createAccount() {
-    printf("Enter the IBAN: ");
-    scanf("%s", accounts[numAccounts].iban);
+    // Generate IBAN automatically
+    generateIBAN(accounts[numAccounts].iban);
+
     getchar(); // Consume newline character left in the buffer
 
     printf("Enter the owner's name: ");
     fgets(accounts[numAccounts].owner, sizeof(accounts[numAccounts].owner), stdin);
     accounts[numAccounts].owner[strcspn(accounts[numAccounts].owner, "\n")] = '\0'; // Remove trailing newline
 
-    printf("Enter the coin type (e.g., EUR, USD, RON): ");
-    scanf("%s", accounts[numAccounts].coin);
-    getchar(); // Consume newline character left in the buffer
+    // Select coin type
+    int coinChoice;
+    printf("Select the coin type:\n");
+    printf("1. RON\n");
+    printf("2. EUR\n");
+    printf("3. USD\n");
+    printf("Enter your choice: ");
+    scanf("%d", &coinChoice);
+    getchar(); // Consume the newline character left in the input buffer after scanf
+
+    switch (coinChoice) {
+        case 1:
+            strcpy(accounts[numAccounts].coin, "RON");
+            break;
+        case 2:
+            strcpy(accounts[numAccounts].coin, "EUR");
+            break;
+        case 3:
+            strcpy(accounts[numAccounts].coin, "USD");
+            break;
+        default:
+            printf("Invalid choice! Setting coin type to RON by default.\n");
+            strcpy(accounts[numAccounts].coin, "RON");
+            break;
+    }
 
     printf("Enter the amount: ");
     scanf("%lf", &accounts[numAccounts].amount);
 
-    numAccounts++;
     printf("Account created successfully!\n");
 
-    updateCSVFile();
+    // Debug: Print the newly created account information
+    printf("New account details:\n");
+    printf("IBAN: %s\n", accounts[numAccounts].iban);
+    printf("Owner: %s\n", accounts[numAccounts].owner);
+    printf("Coin: %s\n", accounts[numAccounts].coin);
+    printf("Amount: %.2lf\n", accounts[numAccounts].amount);
+
+    // Increment numAccounts after printing the new account details
+    numAccounts++;
+
+    createTempFile();
+    updateTXTFile();
+    clearTempFile();
 }
 
 
@@ -167,7 +270,9 @@ void editAccount(const char *name) {
     }
 
     printf("Account edited successfully!\n");
-    updateCSVFile();
+    createTempFile();
+    mergeTempFileWithCSV();
+    clearTempFile();
 }
 
 
@@ -219,6 +324,10 @@ void deleteAccount(const char *name) {
     fclose(file);
 
     printf("Account deleted successfully!\n");
+
+    createTempFile();
+    mergeTempFileWithCSV();
+    clearTempFile();
 }
 
 
@@ -238,6 +347,26 @@ void viewAccountData(const char *name) {
                accounts[indexes[i]].coin, accounts[indexes[i]].amount);
     }
 }
+
+// Function to convert currency
+double convertCurrency(double amount, const char *sourceCurrency, const char *destCurrency) {
+    double conversionRate;
+    if (strcmp(sourceCurrency, "RON") == 0 && strcmp(destCurrency, "EUR") == 0) {
+        conversionRate = 0.20; // 1 RON = 0.20 EUR
+    } else if (strcmp(sourceCurrency, "RON") == 0 && strcmp(destCurrency, "USD") == 0) {
+        conversionRate = 0.22; // 1 RON = 0.22 USD
+    } else if (strcmp(sourceCurrency, "EUR") == 0 && strcmp(destCurrency, "RON") == 0) {
+        conversionRate = 5.0; // 1 EUR = 5.0 RON
+    } else if (strcmp(sourceCurrency, "USD") == 0 && strcmp(destCurrency, "RON") == 0) {
+        conversionRate = 4.55; // 1 USD = 4.55 RON
+    } else {
+        printf("Conversion not supported between %s and %s.\n", sourceCurrency, destCurrency);
+        return -1.0; // Return -1 to indicate conversion not supported
+    }
+
+    return amount * conversionRate;
+}
+
 
 // Function to perform transactions
 void performTransactions(const char *name) {
@@ -279,16 +408,41 @@ void performTransactions(const char *name) {
         return;
     }
 
-    // Perform transaction
-    if (accounts[sourceIndex].amount >= amount) {
-        accounts[sourceIndex].amount -= amount;
-        accounts[destIndex].amount += amount;
-        printf("Transaction successful!\n");
-        updateCSVFile();
+    // Perform transaction with currency conversion if necessary
+    if (strcmp(accounts[sourceIndex].coin, accounts[destIndex].coin) != 0) {
+        // Currency conversion is needed
+        double convertedAmount = convertCurrency(amount, accounts[sourceIndex].coin, accounts[destIndex].coin);
+        if (convertedAmount < 0) {
+            // Conversion not supported
+            printf("Transaction failed: Currency conversion not supported.\n");
+            return;
+        }
+
+        if (accounts[sourceIndex].amount >= amount) {
+            accounts[sourceIndex].amount -= amount;
+            accounts[destIndex].amount += convertedAmount;
+            printf("Transaction successful! Converted amount: %.2lf %s\n", convertedAmount, accounts[destIndex].coin);
+            updateTXTFile();
+        } else {
+            printf("Insufficient funds in the source account.\n");
+        }
     } else {
-        printf("Insufficient funds in the source account.\n");
+        // No currency conversion needed
+        if (accounts[sourceIndex].amount >= amount) {
+            accounts[sourceIndex].amount -= amount;
+            accounts[destIndex].amount += amount;
+            printf("Transaction successful!\n");
+            updateTXTFile();
+        } else {
+            printf("Insufficient funds in the source account.\n");
+        }
     }
+
+    createTempFile();
+    mergeTempFileWithCSV();
+    clearTempFile();
 }
+
 
 int main() {
     int choice = -1;
