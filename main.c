@@ -131,7 +131,7 @@ int findAccountsByOwner(const char *name, int indexes[]) {
 // Function to login
 int login(char *name) {
     printf("Enter your name and surname: ");
-    scanf(" %[^\n]", name); 
+    scanf(" %[^\n]", name);
 
     // Check if the provided name matches any entry in the file
     for (int i = 0; i < numAccounts; i++) {
@@ -196,7 +196,7 @@ void createAccount() {
     scanf("%lf", &accounts[numAccounts].amount);
 
     printf("Account created successfully!\n");
-    
+
     numAccounts++;
 
     createTempFile();
@@ -265,7 +265,6 @@ void editAccount(const char *name) {
 }
 
 
-// Function to delete account
 void deleteAccount(const char *name) {
     int indexes[MAX_ACCOUNTS];
     int count = findAccountsByOwner(name, indexes);
@@ -292,17 +291,26 @@ void deleteAccount(const char *name) {
 
     int selectedIndex = indexes[choice - 1];
 
+    // Open the file for writing
+    FILE *file = fopen("persons.txt", "w");
+    if (file == NULL) {
+        printf("Error opening file for writing.\n");
+        exit(1);
+    }
+
     // Remove the account from the array
     for (int i = selectedIndex; i < numAccounts - 1; i++) {
         accounts[i] = accounts[i + 1];
     }
     numAccounts--;
 
+    // Write the updated account data to the file
     for (int i = 0; i < numAccounts; i++) {
         fprintf(file, "%s,%s,%s,%.2lf\n", accounts[i].iban, accounts[i].owner,
                 accounts[i].coin, accounts[i].amount);
     }
 
+    // Close the file
     fclose(file);
 
     printf("Account deleted successfully!\n");
@@ -311,7 +319,6 @@ void deleteAccount(const char *name) {
     mergeTempFileWithCSV();
     clearTempFile();
 }
-
 
 // Function to view account data
 void viewAccountData(const char *name) {
