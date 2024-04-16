@@ -1,4 +1,4 @@
-Iban,Owner,Coin,0.00
+Iban,Owner,Coin,Amount
 2345678902,Alice Smith,EUR,20000.00
 2345678901,Alice Smith,RON,2400.50
 2345678903,Alice Smith,USD,750.00
