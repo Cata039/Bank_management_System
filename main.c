@@ -98,7 +98,7 @@ void mergeTempFileWithCSV() {
 
     char line[MAX_LINE_LENGTH];
     while (fgets(line, MAX_LINE_LENGTH, tempFile) != NULL) {
-        fputs(line, mainFile); // Append each line from the temp file to the main CSV file
+        fputs(line, mainFile); // Append each line from the temp file to the main TXT file
     }
 
     fclose(mainFile);
@@ -131,9 +131,9 @@ int findAccountsByOwner(const char *name, int indexes[]) {
 // Function to login
 int login(char *name) {
     printf("Enter your name and surname: ");
-    scanf(" %[^\n]", name); // Read full name with spaces
+    scanf(" %[^\n]", name); 
 
-    // Check if the provided name matches any entry in the persons.csv file
+    // Check if the provided name matches any entry in the file
     for (int i = 0; i < numAccounts; i++) {
         if (strcmp(accounts[i].owner, name) == 0) {
             printf("Login successful!\n");
@@ -147,20 +147,17 @@ int login(char *name) {
 
 // Function to generate IBANs automatically
 void generateIBAN(char *iban) {
-    // You can implement your IBAN generation algorithm here
-    // For simplicity, let's generate a random 10-character IBAN
     const char *validChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     int length = strlen(validChars);
 
     for (int i = 0; i < 10; i++) {
         iban[i] = validChars[rand() % length];
     }
-    iban[10] = '\0'; // Null-terminate the string
+    iban[10] = '\0';
 }
 
 // Function to create an account
 void createAccount() {
-    // Generate IBAN automatically
     generateIBAN(accounts[numAccounts].iban);
 
     getchar(); // Consume newline character left in the buffer
@@ -199,15 +196,7 @@ void createAccount() {
     scanf("%lf", &accounts[numAccounts].amount);
 
     printf("Account created successfully!\n");
-
-    // Debug: Print the newly created account information
-    printf("New account details:\n");
-    printf("IBAN: %s\n", accounts[numAccounts].iban);
-    printf("Owner: %s\n", accounts[numAccounts].owner);
-    printf("Coin: %s\n", accounts[numAccounts].coin);
-    printf("Amount: %.2lf\n", accounts[numAccounts].amount);
-
-    // Increment numAccounts after printing the new account details
+    
     numAccounts++;
 
     createTempFile();
@@ -309,13 +298,6 @@ void deleteAccount(const char *name) {
     }
     numAccounts--;
 
-    // Rewrite the CSV file with updated account data
-    FILE *file = fopen("persons.csv", "w");
-    if (file == NULL) {
-        printf("Error opening file.\n");
-        exit(1);
-    }
-
     for (int i = 0; i < numAccounts; i++) {
         fprintf(file, "%s,%s,%s,%.2lf\n", accounts[i].iban, accounts[i].owner,
                 accounts[i].coin, accounts[i].amount);
@@ -413,7 +395,6 @@ void performTransactions(const char *name) {
         // Currency conversion is needed
         double convertedAmount = convertCurrency(amount, accounts[sourceIndex].coin, accounts[destIndex].coin);
         if (convertedAmount < 0) {
-            // Conversion not supported
             printf("Transaction failed: Currency conversion not supported.\n");
             return;
         }
