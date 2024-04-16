@@ -86,8 +86,8 @@ void createTempFile() {
     fclose(file);
 }
 
-// Function to merge temporary file with main CSV file
-void mergeTempFileWithCSV() {
+// Function to merge temporary file with main TXT file
+void mergeTempFileWithTXT() {
     FILE *mainFile = fopen("persons.txt", "w");
     FILE *tempFile = fopen(TEMP_FILE_NAME, "r");
 
@@ -260,7 +260,7 @@ void editAccount(const char *name) {
 
     printf("Account edited successfully!\n");
     createTempFile();
-    mergeTempFileWithCSV();
+    mergeTempFileWithTXT();
     clearTempFile();
 }
 
@@ -316,7 +316,7 @@ void deleteAccount(const char *name) {
     printf("Account deleted successfully!\n");
 
     createTempFile();
-    mergeTempFileWithCSV();
+    mergeTempFileWithTXT();
     clearTempFile();
 }
 
@@ -427,7 +427,7 @@ void performTransactions(const char *name) {
     }
 
     createTempFile();
-    mergeTempFileWithCSV();
+    mergeTempFileWithTXT();
     clearTempFile();
 }
 
