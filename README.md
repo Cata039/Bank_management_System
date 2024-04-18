@@ -24,3 +24,6 @@ The Bank Management System is a C program that simulates basic banking operation
 
 ## Contributors
  Cata039 - Jemna Catalina
+
+ ![image](https://github.com/Cata039/Bank_management_System/assets/157022488/1662df06-9b2b-4db0-ac34-53cbd82edc66)
+
